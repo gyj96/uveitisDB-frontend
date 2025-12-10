@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+release/
+*.log
+
+# Electron builder cache/artifacts
+*.asar
+
+# OS / tooling
+.DS_Store
+.vscode/
+.idea/
+
+# Env/config overrides
+.env.local
+.env.*

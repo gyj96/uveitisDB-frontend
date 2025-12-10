@@ -1,0 +1,44 @@
+{
+  "appId": "com.gyj.uveitis",
+  "productName": "gyj葡萄膜炎临床数据库系统",
+  "directories": {
+    "output": "release"
+  },
+  "files": [
+    "dist/**/*",
+    "electron/**/*",
+    "backend/**/*",
+    "package.json"
+  ],
+  "extraResources": [
+    {
+      "from": "backend",
+      "to": "backend",
+      "filter": [
+        "**/*"
+      ]
+    }
+  ],
+  "asar": false,
+  "win": {
+    "target": "nsis",
+    "artifactName": "gyj-uveitis-setup-${version}.exe",
+    "legalTrademarks": "gyj",
+    "publisherName": "gyj",
+    "nsis": {
+      "oneClick": false,
+      "perMachine": true,
+      "allowElevation": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "include": "installer.nsh",
+      "deleteAppDataOnUninstall": true
+    }
+  },
+  "mac": {
+    "target": "dmg"
+  },
+  "linux": {
+    "target": "AppImage"
+  }
+}

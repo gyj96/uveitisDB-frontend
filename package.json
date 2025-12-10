@@ -1,0 +1,32 @@
+{
+  "name": "gyj-uveitis-app",
+  "version": "0.1.0",
+  "description": "gyj葡萄膜炎临床数据库系统前端（Electron + Vue3 + Element Plus）",
+  "author": "gyj",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "dev:renderer": "vite dev --host --port 5173",
+    "build:renderer": "vite build",
+    "build:win": "npm run build:renderer && electron-builder --win --config electron-builder.json",
+    "build:mac": "npm run build:renderer && electron-builder --mac --config electron-builder.json",
+    "build:linux": "npm run build:renderer && electron-builder --linux --config electron-builder.json"
+  },
+  "dependencies": {
+    "axios": "^1.13.2",
+    "echarts": "^6.0.0",
+    "element-plus": "^2.12.0",
+    "pinia": "^3.0.4",
+    "vue": "^3.5.25",
+    "vue-router": "^4.6.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.2",
+    "@vitejs/plugin-vue": "^6.0.2",
+    "electron": "^39.2.6",
+    "electron-builder": "^26.0.12",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.7",
+    "wait-on": "^9.0.3"
+  }
+}
