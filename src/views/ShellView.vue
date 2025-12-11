@@ -124,7 +124,7 @@ function logout() {
 .menu :deep(.el-menu-item) {
   border-radius: 12px;
   margin: 6px 12px;
-  padding-left: 12px !important;
+  padding: 0 12px !important;
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -167,6 +167,7 @@ function logout() {
 }
 .main {
   backdrop-filter: blur(6px);
+  min-width: 0;
 }
 .topbar {
   height: 64px;
@@ -194,6 +195,8 @@ function logout() {
 }
 .content {
   padding: 18px 24px 26px;
+  min-width: 0;
+  overflow-x: hidden;
 }
 @media (max-width: 1080px) {
   .shell {

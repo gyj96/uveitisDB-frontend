@@ -22,8 +22,8 @@ async function fetchTables() {
 }
 
 function pickNumberField() {
-  const target = currentTable.value?.fields?.find((f: any) => ['integer', 'number'].includes(f.type_hint));
-  numericField.value = target?.name || currentTable.value?.fields?.[0]?.name || '';
+  const numeric = currentTable.value?.fields?.filter((f: any) => ['integer', 'number'].includes(f.type_hint)) || [];
+  numericField.value = numeric[0]?.name || '';
 }
 
 async function refresh() {
@@ -101,7 +101,7 @@ onMounted(fetchTables);
         </el-select>
         <el-select v-model="numericField" placeholder="选择数值字段" style="width: 220px" @change="refresh">
           <el-option
-            v-for="f in currentTable?.fields || []"
+            v-for="f in (currentTable?.fields || []).filter((f:any)=>['integer','number'].includes(f.type_hint))"
             :key="f.name"
             :label="f.name"
             :value="f.name"
