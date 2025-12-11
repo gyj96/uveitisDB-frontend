@@ -271,6 +271,7 @@ fetchTables();
                 multiple
                 filterable
                 allow-create
+                default-first-option
                 :reserve-keyword="false"
                 placeholder="输入后回车生成标签"
             />
@@ -392,6 +393,7 @@ fetchTables();
                   multiple
                   filterable
                   allow-create
+                  default-first-option
                   :reserve-keyword="false"
                   class="alias-select"
                   style="width: 100%;"

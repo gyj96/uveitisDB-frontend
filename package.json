@@ -5,7 +5,7 @@
   "author": "gyj",
   "main": "electron/main.js",
   "scripts": {
-    "dev": "node scripts/dev.js",
+    "dev": "concurrently \"npm run dev:renderer\" \"wait-on tcp:5173 && electron .\"",
     "dev:renderer": "vite dev --host --port 5173",
     "build:renderer": "vite build",
     "build:win": "npm run build:renderer && electron-builder --win --config electron-builder.json",
@@ -23,6 +23,7 @@
   "devDependencies": {
     "@types/node": "^24.10.2",
     "@vitejs/plugin-vue": "^6.0.2",
+    "concurrently": "^9.2.1",
     "electron": "^39.2.6",
     "electron-builder": "^26.0.12",
     "typescript": "^5.9.3",

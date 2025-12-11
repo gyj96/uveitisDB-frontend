@@ -1,8 +1,8 @@
 const { app, BrowserWindow, nativeTheme, Menu } = require('electron');
 const path = require('path');
 
-const isDev = process.env.NODE_ENV === 'development';
-const devServerURL = process.env.VITE_DEV_SERVER_URL || 'http://127.0.0.1:5173';
+const isDev = !app.isPackaged;
+const devServerURL = process.env.VITE_DEV_SERVER_URL || 'http://localhost:5173';
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -15,10 +15,12 @@ function createWindow() {
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
+      nodeIntegration: false
     },
   });
 
   if (isDev) {
+    console.log('👀 Loading URL:', devServerURL); // 方便调试看日志
     win.loadURL(devServerURL);
     win.webContents.openDevTools({ mode: 'detach' });
   } else {
@@ -28,6 +30,10 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  if (isDev) {
+    process.env.NODE_ENV = 'development';
+  }
+
   nativeTheme.themeSource = 'light';
   Menu.setApplicationMenu(null);
   createWindow();

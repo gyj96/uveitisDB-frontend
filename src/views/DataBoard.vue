@@ -1,8 +1,8 @@
-<script setup lang="ts">
-import {computed, onMounted, reactive, ref} from 'vue';
-import {ElMessage, ElMessageBox, UploadRequestOptions, FormInstance, FormRules} from 'element-plus';
-import {api} from '@/store/auth';
+<script lang="ts" setup>
+import {computed, onMounted, reactive, ref, watch} from 'vue';
 import type {UploadRawFile} from 'element-plus';
+import {ElMessage, ElMessageBox, FormInstance, FormRules, UploadRequestOptions} from 'element-plus';
+import {api} from '@/store/auth';
 import zhCn from 'element-plus/es/locale/lang/zh-cn';
 
 const tables = ref<any[]>([]);
@@ -31,7 +31,7 @@ const importFix = reactive({
     name: string;
     action: 'create' | 'map' | 'ignore';
     target: string;
-    newField: {name: string; labels: string[]; type: string; required: boolean};
+    newField: { name: string; labels: string[]; type: string; required: boolean };
   }[],
 });
 const hasImportFixError = computed(() =>
@@ -244,9 +244,31 @@ async function selectTable(table: any) {
       labels: f.labels || [],
     });
   });
-  tipFields.value = columnSettings.slice(0, 2).map((c) => c.key);
+
+  const storageKey = `databoard_tips_${table.name}`;
+  const savedTips = localStorage.getItem(storageKey);
+
+  if (savedTips) {
+    try {
+      const parsed = JSON.parse(savedTips);
+      const allKeys = columnSettings.map(c => c.key);
+      tipFields.value = parsed.filter((k: string) => allKeys.includes(k));
+    } catch (e) {
+      tipFields.value = columnSettings.slice(0, 2).map((c) => c.key);
+    }
+  } else {
+    tipFields.value = columnSettings.slice(0, 2).map((c) => c.key);
+  }
+
   await fetchData();
 }
+
+watch(tipFields, (newVal) => {
+  if (currentTable.value) {
+    const storageKey = `databoard_tips_${currentTable.value.name}`;
+    localStorage.setItem(storageKey, JSON.stringify(newVal));
+  }
+});
 
 async function fetchData() {
   if (!currentTable.value) return;
@@ -596,17 +618,17 @@ onMounted(fetchTables);
       <div class="left">
         <el-select
             v-model="currentTable"
-            value-key="name"
             placeholder="选择数据表"
             style="width: 260px"
+            value-key="name"
             @change="selectTable"
         >
           <el-option v-for="item in tables" :key="item.name" :label="item.display_name || item.name" :value="item"/>
         </el-select>
         <el-input
             v-model="pagination.search"
-            placeholder="模糊搜索"
             clearable
+            placeholder="模糊搜索"
             style="width: 200px"
             @change="fetchData"
         />
@@ -614,35 +636,48 @@ onMounted(fetchTables);
       </div>
       <div class="right">
         <el-upload :http-request="handleUpload" :show-file-list="false">
-          <el-button type="primary" plain>导入Excel/CSV</el-button>
+          <el-button plain type="primary">导入Excel/CSV</el-button>
         </el-upload>
         <el-button @click="exportData(false)">导出当前页/筛选</el-button>
         <el-button @click="exportData(true)">导出所有结果</el-button>
         <el-button type="primary" @click="openCreate">手动录入</el-button>
-        <el-button plain @click="openFieldDialog" :disabled="!currentTable">新增字段</el-button>
-        <el-button plain type="danger" :disabled="!deleteFields.length" @click="dropSelectedFields">删除字段</el-button>
-        <el-button type="danger" plain :disabled="selectedIds.length === 0" @click="batchDelete">批量删除
+        <el-button :disabled="!currentTable" plain @click="openFieldDialog">新增字段</el-button>
+        <el-button :disabled="!deleteFields.length" plain type="danger" @click="dropSelectedFields">删除字段</el-button>
+        <el-button :disabled="selectedIds.length === 0" plain type="danger" @click="batchDelete">批量删除
           ({{ selectedIds.length }})
         </el-button>
       </div>
     </div>
 
     <div class="card data-card">
-      <el-alert v-if="errorText" :title="errorText" type="warning" show-icon :closable="false"/>
+      <el-alert v-if="errorText" :closable="false" :title="errorText" show-icon type="warning"/>
       <div class="table-actions">
         <div class="columns">
           <span>列可见性：</span>
-          <el-checkbox-group v-model="visibleKeys">
-            <el-checkbox v-for="col in columnSettings" :key="col.key" :label="col.key"/>
-          </el-checkbox-group>
+          <el-select
+              v-model="visibleKeys"
+              collapse-tags
+              collapse-tags-tooltip
+              filterable
+              multiple
+              placeholder="选择显示的列"
+              style="width: 280px"
+          >
+            <el-option
+                v-for="col in columnSettings"
+                :key="col.key"
+                :label="getFieldTitle(col.key)"
+                :value="col.key"
+            />
+          </el-select>
         </div>
         <div class="columns">
           <el-switch v-model="showTips" active-text="悬浮提示"/>
           <el-select
               v-model="tipFields"
-              multiple
               collapse-tags
               collapse-tags-tooltip
+              multiple
               placeholder="提示显示哪些字段"
               size="small"
               style="width: 280px"
@@ -653,9 +688,9 @@ onMounted(fetchTables);
         <div class="columns">
           <span>删除字段：</span>
           <el-select v-model="deleteFields"
-                     multiple
                      collapse-tags
                      collapse-tags-tooltip
+                     multiple
                      placeholder="选择要删除的字段"
                      style="width: 240px"
           >
@@ -666,35 +701,35 @@ onMounted(fetchTables);
 
       <div class="table-wrapper">
         <el-table
-            class="data-table"
-            :style="{ minWidth: tableMinWidth + 'px', width: '100%' }"
-            :data="dataRows"
-            border
-            stripe
-            height="560"
             v-loading="loading"
-            table-layout="fixed"
+            :data="dataRows"
             :fit="true"
+            :style="{ minWidth: tableMinWidth + 'px', width: '100%' }"
+            border
+            class="data-table"
+            height="560"
+            stripe
+            table-layout="fixed"
             @sort-change="onSort"
             @selection-change="handleSelectionChange"
         >
-          <el-table-column type="selection" width="55" align="center" fixed="left"/>
+          <el-table-column align="center" fixed="left" type="selection" width="55"/>
           <el-table-column
               v-for="(col, idx) in displayColumns"
               :key="col.key"
-              :prop="col.key"
+              :fixed="idx === 0 ? 'left' : undefined"
               :label="getFieldTitle(col.key)"
               :min-width="col.width || 140"
-              :fixed="idx === 0 ? 'left' : undefined"
+              :prop="col.key"
               sortable
           >
             <template #default="{ row }">
               <el-tooltip
                   v-if="showTips && tipFields.length"
-                  placement="top"
-                  :show-after="200"
                   :hide-after="0"
+                  :show-after="200"
                   effect="light"
+                  placement="top"
                   popper-class="row-tip-popper"
               >
                 <template #content>
@@ -713,11 +748,11 @@ onMounted(fetchTables);
             </template>
           </el-table-column>
 
-          <el-table-column label="操作" :width="180" :min-width="180" fixed="right" align="center">
+          <el-table-column :min-width="180" :width="180" align="center" fixed="right" label="操作">
             <template #default="{ row }">
               <div class="ops">
-                <el-button text size="small" @click="openEdit(row)">编辑</el-button>
-                <el-button text type="danger" size="small" @click="remove(row)">删除</el-button>
+                <el-button size="small" text @click="openEdit(row)">编辑</el-button>
+                <el-button size="small" text type="danger" @click="remove(row)">删除</el-button>
               </div>
             </template>
           </el-table-column>
@@ -727,12 +762,12 @@ onMounted(fetchTables);
       <div class="pager">
         <el-config-provider :locale="zhCn">
           <el-pagination
-              background
-              layout="total, sizes, prev, pager, next"
+              v-model:current-page="pagination.page"
               :page-size="pagination.size"
               :page-sizes="[10, 20, 50, 100]"
               :total="total"
-              v-model:current-page="pagination.page"
+              background
+              layout="total, sizes, prev, pager, next"
               @current-change="fetchData"
               @size-change="(s:number)=>{pagination.size=s;fetchData();}"
           />
@@ -741,11 +776,11 @@ onMounted(fetchTables);
     </div>
 
     <el-dialog v-model="editDialog.visible" :title="editDialog.record.id ? '编辑记录' : '新增记录'" width="520px">
-      <el-form ref="editFormRef" label-position="top" :model="editDialog.record">
+      <el-form ref="editFormRef" :model="editDialog.record" label-position="top">
         <el-form-item
             v-for="col in columnSettings"
-            :key="col.key"
             v-show="col.visible"
+            :key="col.key"
             :label="formatFieldLabel(col)"
             :prop="col.key"
             :rules="getEditRules(col)"
@@ -771,11 +806,12 @@ onMounted(fetchTables);
         <el-form-item label="中文别名">
           <el-select
               v-model="fieldDialog.labels"
-              multiple
-              filterable
-              allow-create
               :reserve-keyword="false"
+              allow-create
               collapse-tags
+              default-first-option
+              filterable
+              multiple
               placeholder="输入后回车生成标签"
           />
         </el-form-item>
@@ -789,7 +825,7 @@ onMounted(fetchTables);
           </el-select>
         </el-form-item>
         <el-form-item label="必填">
-          <el-switch v-model="fieldDialog.required" inline-prompt active-text="必填" inactive-text="选填"/>
+          <el-switch v-model="fieldDialog.required" active-text="必填" inactive-text="选填" inline-prompt/>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -798,15 +834,15 @@ onMounted(fetchTables);
       </template>
     </el-dialog>
 
-    <el-dialog v-model="importFix.visible" title="处理未识别的列" width="620px" align-center>
+    <el-dialog v-model="importFix.visible" align-center title="处理未识别的列" width="620px">
       <el-alert
+          :closable="false"
+          show-icon
+          style="margin-bottom: 12px"
           title="以下列在当前表中找不到对应字段，请选择映射、忽略或直接新增字段后再导入。"
           type="warning"
-          show-icon
-          :closable="false"
-          style="margin-bottom: 12px"
       />
-      <div class="unknown-box" v-for="item in importFix.unknown" :key="item.name">
+      <div v-for="item in importFix.unknown" :key="item.name" class="unknown-box">
         <header class="unknown-header">
           <span class="unknown-name">{{ item.name }}</span>
           <el-radio-group v-model="item.action" size="small">
@@ -817,7 +853,7 @@ onMounted(fetchTables);
         </header>
 
         <div v-if="item.action === 'map'" class="unknown-row">
-          <el-select v-model="item.target" placeholder="选择已有字段" filterable clearable style="width: 320px">
+          <el-select v-model="item.target" clearable filterable placeholder="选择已有字段" style="width: 320px">
             <el-option v-for="col in columnSettings" :key="col.key" :label="formatFieldLabel(col)" :value="col.key"/>
           </el-select>
         </div>
@@ -838,14 +874,15 @@ onMounted(fetchTables);
               <el-form-item label="中文别名">
                 <el-select
                     v-model="item.newField.labels"
-                    multiple
-                    filterable
+                    :reserve-keyword="false"
                     allow-create
                     collapse-tags
                     collapse-tags-tooltip
-                    :reserve-keyword="false"
-                    style="width: 100%;"
+                    default-first-option
+                    filterable
+                    multiple
                     placeholder="输入后回车生成标签"
+                    style="width: 100%;"
                 />
               </el-form-item>
               <el-form-item label="类型">
@@ -860,9 +897,9 @@ onMounted(fetchTables);
               <el-form-item label="必填" style="width: 120px">
                 <el-switch
                     v-model="item.newField.required"
-                    inline-prompt
                     active-text="必填"
                     inactive-text="选填"
+                    inline-prompt
                 />
               </el-form-item>
             </div>
@@ -872,7 +909,8 @@ onMounted(fetchTables);
       </div>
       <template #footer>
         <el-button @click="cancelImportFix">取消</el-button>
-        <el-button type="primary" :loading="importFix.uploading" :disabled="hasImportFixError" @click="confirmImportFix">
+        <el-button :disabled="hasImportFixError" :loading="importFix.uploading" type="primary"
+                   @click="confirmImportFix">
           继续导入
         </el-button>
       </template>
@@ -944,8 +982,10 @@ onMounted(fetchTables);
 }
 
 .row-tip-card {
-  min-width: 260px;
-  max-width: 340px;
+  min-width: 300px;
+  max-width: 600px;
+  max-height: 400px;
+  overflow-y: auto;
   background: radial-gradient(circle at 0 0, #ecfeff 0, #f9fafb 40%, #f3f4ff 100%);
   border-radius: 14px;
   padding: 10px 12px;
@@ -992,7 +1032,7 @@ onMounted(fetchTables);
   margin-bottom: 10px;
   background: #f9fafb;
 }
- 
+
 .err {
   color: #e11d48;
   font-size: 12px;
