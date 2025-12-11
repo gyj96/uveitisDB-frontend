@@ -352,9 +352,12 @@ fetchTables();
       title="编辑表结构"
       width="1000px"
       align-center
-      :lock-scroll="false"
+      class="edit-table-dialog"
+      :close-on-click-modal="true"
+      :close-on-press-escape="true"
+      append-to-body
   >
-    <div class="edit-body-wrapper">
+    <div class="edit-body">
       <el-form ref="editFormRef" label-position="top" :rules="rules" :model="editDialog.form">
         <el-form-item label="表英文名" prop="name">
           <el-input v-model="editDialog.form.name" placeholder="例如 patients"/>
@@ -371,8 +374,8 @@ fetchTables();
         <h4>字段</h4>
         <el-button text size="small" @click="addEditField">添加字段</el-button>
       </div>
-      <div class="field-table-scroll">
-        <el-table :data="editDialog.form.fields" border stripe :max-height="300">
+      <div class="field-table-container">
+        <el-table :data="editDialog.form.fields" border stripe class="field-table">
           <el-table-column type="index" label="#" width="50"/>
           <el-table-column label="字段英文名" width="200">
             <template #default="{ row }">
@@ -469,27 +472,93 @@ fetchTables();
   padding: 0 6px;
 }
 
-.edit-body-wrapper {
-  max-height: 75vh;
-  overflow-y: auto;
+/* 修复弹窗垂直居中问题 */
+.edit-table-dialog :deep(.el-overlay) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-table-dialog :deep(.el-dialog) {
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  margin: auto !important; /* 确保居中 */
+  position: relative !important;
+  top: auto !important;
+  transform: none !important;
+}
+
+.edit-table-dialog :deep(.el-dialog__header) {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #fff;
+  padding-top: 16px;
 }
 
 .edit-table-dialog :deep(.el-dialog__body) {
+  padding: 0 20px 20px;
   flex: 1;
-  max-height: calc(92vh - 140px);
+  min-height: 0;
+  overflow: hidden;
+}
+
+.edit-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+}
+
+.field-table-container {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.field-table-container :deep(.el-table) {
+  height: 100%;
+}
+
+.field-table-container :deep(.el-table__body-wrapper) {
+  max-height: none;
   overflow-y: auto;
   overflow-x: hidden;
 }
 
-.edit-table-dialog :deep(.el-table__body-wrapper) {
-  max-height: none;
-  overflow-y: visible;
-  overflow-x: hidden;
+.field-table {
+  width: 100%;
 }
 
 .alias-select :deep(.el-select__tags-text) {
   max-width: 160px;
   display: inline-block;
   white-space: normal;
+}
+
+@media (max-height: 800px) {
+  .edit-table-dialog :deep(.el-dialog) {
+    max-height: 85vh;
+  }
+}
+
+@media (max-height: 700px) {
+  .edit-table-dialog :deep(.el-dialog) {
+    max-height: 80vh;
+  }
+}
+
+@media (max-height: 600px) {
+  .edit-table-dialog :deep(.el-dialog) {
+    max-height: 75vh;
+  }
+}
+
+@media (max-width: 1200px) {
+  .edit-table-dialog :deep(.el-dialog) {
+    width: 95% !important;
+    max-width: 95vw !important;
+  }
 }
 </style>
